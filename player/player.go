@@ -32,14 +32,16 @@ func (me *Player) InitializePlayerTerritories(territories []*Territory) {
 	}
 }
 
-func (me *Player) GetAttackableTerritories() map[string]*Territory {
+func (me *Player) GetAttackableTerritories() map[*Territory][]*Territory {
 
-	attackable_territories := map[string]*Territory{}
+	attackable_territories := map[*Territory][]*Territory{}
 	for _, owned_territory := range me.Owned_territories {
-		if owned_territory.N_tanks > 1 {
+		if owned_territory.N_tanks > 1 { //you need at least 2 troups to attack a new territory
 			for _, adj_territory := range owned_territory.Adj_territories {
-				if attackable_territories[adj_territory.Name] == nil && adj_territory.Owner != me {
-					attackable_territories[adj_territory.Name] = adj_territory
+
+				if adj_territory.Owner != me {
+					fmt.Printf("from: %v adj territory: %v Owner: %v %v adj owner: %v %v: \n", owned_territory.Name, adj_territory.Name, me.Name, &me, adj_territory.Owner.Name, &adj_territory.Owner)
+					attackable_territories[adj_territory] = append(attackable_territories[adj_territory], owned_territory)
 				}
 			}
 		}
@@ -47,29 +49,7 @@ func (me *Player) GetAttackableTerritories() map[string]*Territory {
 	return attackable_territories
 }
 
-func (me *Player) GetOwnedSideTerritories(target *Territory) map[int]*Territory {
-
-	owned_side_territories := map[int]*Territory{}
-	counter := 0
-	for _, owned_territory := range me.Owned_territories {
-		if owned_territory.N_tanks > 1 {
-			for _, adj_territory := range owned_territory.Adj_territories {
-				if adj_territory == target {
-					owned_side_territories[counter] = owned_territory
-					counter++
-				}
-			}
-		}
-	}
-	return owned_side_territories
-}
-
-func (me *Player) ConquerTerritory(target *Territory) {
-	me.Owned_territories[target.Name] = target
-	target.Owner = me
-}
-
-func (me *Player) Attack(from, to *Territory, n_dice *int) bool {
+func (me *Player) Attack(from, to *Territory, n_dice *int) {
 
 	mine_dices := []int{}
 	opponent_dices := []int{}
@@ -100,5 +80,31 @@ func (me *Player) Attack(from, to *Territory, n_dice *int) bool {
 
 	fmt.Printf("You have %v tanks, the opponent: %v\n", from.N_tanks, to.N_tanks)
 
-	return to.N_tanks == 0
+	//if there aren't more troups on enemy territory, move troups
+	moving_units := 0
+	if to.N_tanks == 0 {
+		//Conquered territory attack logic (you can move up to 3 units into the new territory)
+		switch {
+		case *n_dice < from.N_tanks:
+			moving_units = *n_dice
+		default:
+			moving_units = *n_dice - 1
+		}
+		me.ConquerTerritory(&moving_units, from, to)
+	}
+
+}
+
+func (me *Player) ConquerTerritory(n_troups *int, from, to *Territory) {
+	delete(to.Owner.Owned_territories, to.Name) //deleting territory prev-ownership
+	me.Owned_territories[to.Name] = to
+	to.Owner = me
+
+	//move troups to the new conquered territory
+	me.MoveTroups(n_troups, from, to)
+}
+
+func (me *Player) MoveTroups(n_troups *int, from, to *Territory) {
+	from.N_tanks -= *n_troups
+	to.N_tanks += *n_troups
 }

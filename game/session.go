@@ -7,17 +7,17 @@ import (
 
 type Session struct {
 	Id          int32
-	players     []player.Player
+	players     []*player.Player
 	Territories map[string]*player.Territory
 }
 
 func (s *Session) InitSession() {
 	// method testing implementation
 	s.Territories = player.InitializeTerritories()
-	s.players = []player.Player{player.Player{Name: "Federico"}, player.Player{Name: "Nunzio"}}
+	s.players = []*player.Player{&player.Player{Name: "Federico"}, &player.Player{Name: "Nunzio"}}
+
 	s.players[0].InitializePlayerTerritories([]*player.Territory{s.Territories["Europe"]})
 	s.players[1].InitializePlayerTerritories([]*player.Territory{s.Territories["America"], s.Territories["Antartica"]})
-
 	//add players in the session
 }
 
@@ -26,7 +26,7 @@ func (s *Session) StartGame() {
 	for !someone_wins {
 		for _, user := range s.players {
 			//EconomicPhase(user)
-			MilitaryPhase(&user)
+			MilitaryPhase(user)
 			//MovePhase()
 		}
 	}
@@ -47,7 +47,7 @@ func MilitaryPhase(p *player.Player) {
 			i := 1
 			attackable_territories := p.GetAttackableTerritories()
 			user_choice_map := map[int]*player.Territory{}
-			for _, territory := range attackable_territories {
+			for territory := range attackable_territories {
 				fmt.Printf("%d. Region: %v \tOwner:%v \tTanks:%v \t\n", i, territory.Name, territory.Owner.Name, territory.N_tanks)
 				user_choice_map[i] = territory
 				i++
@@ -66,25 +66,21 @@ func MilitaryPhase(p *player.Player) {
 				fmt.Printf("You are attacking %v! \nNow select from which of your territories you want to attack: \n",
 					target_territory.Name)
 
-				owned_side_territories := p.GetOwnedSideTerritories(target_territory)
 				i = 1
-				for _, territory := range owned_side_territories {
-					fmt.Printf("%d. Region: %v Tanks:%v \n", i, territory.Name, territory.N_tanks)
+				for _, from := range attackable_territories[target_territory] {
+					fmt.Printf("%d. Region: %v Tanks:%v \n", i, from.Name, from.N_tanks)
+					user_choice_map[i] = from
 					i++
 				}
 
 				fmt.Scanf("%d\n", &user_input)
-				from_territory = owned_side_territories[user_input-1]
+				from_territory = user_choice_map[user_input]
 
 				fmt.Println("Insert the number of dice you want to roll: ")
 				fmt.Scanf("%d\n", &user_input)
 
-				conquered := p.Attack(from_territory, target_territory, &user_input)
+				p.Attack(from_territory, target_territory, &user_input)
 
-				if conquered {
-					fmt.Printf("Congratulation, you conquered %v\n", target_territory.Name)
-					p.ConquerTerritory(target_territory)
-				}
 			}
 		}
 

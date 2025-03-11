@@ -17,8 +17,8 @@ func InitializeTerritories() map[string]*Territory {
 	territories["America"].Adj_territories = append(territories["America"].Adj_territories, territories["Europe"])
 	territories["Europe"].Adj_territories = append(territories["Europe"].Adj_territories, territories["America"])
 
-	territories["Europe"].Adj_territories = append(territories["Europe"].Adj_territories, territories["Antartica"])
-	territories["Antartica"].Adj_territories = append(territories["Antartica"].Adj_territories, territories["Europe"])
+	territories["America"].Adj_territories = append(territories["America"].Adj_territories, territories["Antartica"])
+	territories["Antartica"].Adj_territories = append(territories["Antartica"].Adj_territories, territories["America"])
 
 	return territories
 }
